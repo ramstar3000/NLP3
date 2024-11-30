@@ -5,11 +5,14 @@ from main import parse_conllu
 from utils import calculate_v_measure, viterbi
 
 from conllu import parse_incr
+from multiprocessing import Pool
+
 
 
 np.random.seed(0)
 
 # TODO Make it work!!!
+# TODO Graph the convergence
 
 def normalize_log_probs(log_probs):
 
@@ -142,15 +145,41 @@ class HMM:
             self.B = normalize_log_probs(self.B)
 
             return
-        
-        self.A = np.load(f"A_{number}.npy")
-        self.B = np.load(f"B_{number}.npy")
+        try:
+            self.A = np.load(f"states/A2_{number}.npy")
+            self.B = np.load(f"states/B2_{number}.npy")
+        except:
+            print("Error loading A and B, reinitialising")
+            self.initialise_matricies(False, number)
 
     def find_tolerance(self, prev_log_likelihood, alpha):
         log_likelihood = logsumexp(alpha)
         return np.abs(log_likelihood - prev_log_likelihood) / np.abs(prev_log_likelihood) , log_likelihood
     
-    def train(self, sentences, output_vocab, hidden_state_set, max_iter = 50, tol = 1e-18, r = None, number = 0, load=False):
+
+    def process_sentences(self, sentences):
+        xis_numerator = np.full((self.N, self.N), -np.inf)
+        xis_denominator = np.full((self.N), -np.inf)
+        gamma_numerator = np.full((self.N, self.M), -np.inf)
+        gamma_denominator = np.full((self.N), -np.inf)
+
+        for sentence in sentences:
+            
+            sentence = np.array(sentence)
+            gamma, xi, alpha, _ = self.forward_backward(sentence, self.hidden_state_set)
+
+            xis_numerator = np.logaddexp(xis_numerator, logsumexp(xi, axis=0)) # Sum over time
+            xis_denominator = np.logaddexp(xis_denominator, logsumexp(xi, axis=(0, 2))) # Sum over time and j state
+
+            for v in set(sentence):
+                indices = np.where(sentence == v)[0]
+
+                gamma_numerator[:, v] = np.logaddexp(gamma_numerator[:, v], logsumexp(gamma[:, indices], axis=1))
+                gamma_denominator = np.logaddexp(gamma_denominator, logsumexp(gamma, axis=1))
+
+        return xis_numerator, xis_denominator, gamma_numerator, gamma_denominator, alpha
+
+    def train(self, sentences, output_vocab, hidden_state_set, max_iter = 50, tol = 1e-18, r = None, number = 0, load=False, num_states = 19):
         
         self.N = len(hidden_state_set)
         self.M = len(output_vocab)
@@ -159,31 +188,31 @@ class HMM:
         self.initialise_matricies(load, number)        
 
         # Additionally, 1 can only be observed in state 1
-        
+        self.hidden_state_set = hidden_state_set
 
         prev_log_likelihood = -1e10
 
-        for _ in tqdm(range(max_iter)):
+        for iteration in tqdm(range(max_iter)):
             
             # Want to index i, j or i, v
-            xis_numerator = np.full((self.N, self.N), -np.inf)
-            xis_denominator = np.full((self.N), -np.inf)
-            gamma_numerator = np.full((self.N, self.M), -np.inf)
-            gamma_denominator = np.full((self.N), -np.inf)
+            num_processes = 12
+            chunk_size = len(sentences) // num_processes
 
-            for sentence in sentences:
-                
-                sentence = np.array(sentence)
-                gamma, xi, alpha, _ = self.forward_backward(sentence, hidden_state_set)
+            chunks = [sentences[i:i + chunk_size] for i in range(0, len(sentences), chunk_size)]
 
-                xis_numerator = np.logaddexp(xis_numerator, logsumexp(xi, axis=0)) # Sum over time
-                xis_denominator = np.logaddexp(xis_denominator, logsumexp(xi, axis=(0, 2))) # Sum over time and j state
+            with Pool(num_processes) as p:
+                results = p.map(self.process_sentences, chunks)
 
-                for v in set(sentence):
-                    indices = np.where(sentence == v)[0]
 
-                    gamma_numerator[:, v] = np.logaddexp(gamma_numerator[:, v], logsumexp(gamma[:, indices], axis=1))
-                    gamma_denominator = np.logaddexp(gamma_denominator, logsumexp(gamma, axis=1))
+            # xis numerator using logumexp of first element in the tuple
+            xis_numerator = logsumexp([x[0] for x in results], axis=0)
+            xis_denominator = logsumexp([x[1] for x in results], axis=0)
+            gamma_numerator = logsumexp([x[2] for x in results], axis=0)
+            gamma_denominator = logsumexp([x[3] for x in results], axis=0)
+            alpha = results[0][4]
+
+            # xis_numerator, xis_denominator, gamma_numerator, gamma_denominator, alpha = self.process_sentences(sentences, hidden_state_set)
+            
 
             # M step to update A and B
 
@@ -192,7 +221,7 @@ class HMM:
             new_B = gamma_numerator - np.stack([gamma_denominator] * self.M, axis=1)
 
             # Calcualte the difference between the new and old A and B, note these are in log space
-            real_diff, log_likelihood   = self.find_tolerance(prev_log_likelihood, alpha[:, -1])
+            real_diff, log_likelihood  = self.find_tolerance(prev_log_likelihood, alpha[:, -1])
 
             if real_diff < tol:
                 print("Converged")
@@ -201,14 +230,16 @@ class HMM:
                 print(f"Likelihood diff: {real_diff}") 
                 prev_log_likelihood = log_likelihood
 
-            PostProcessingHMM.full_post_loop(self.A, self.B, number, sentences, 19, r)
+            if iteration % 3 == 1:
+                PostProcessingHMM.full_post_loop(self.A, self.B, number, sentences, num_states, r)
 
             self.A = new_A
             self.B = new_B
             
             # Save A and B into a file for debugging
-            np.save(f"A_{number}.npy", self.A)
-            np.save(f"B_{number}.npy", self.B)
+            np.save(f"states/A2_fine_{number}.npy", self.A)
+            np.save(f"states/B2_fine_{number}.npy", self.B)
+
 
         return self.A, self.B
 
@@ -224,8 +255,8 @@ def main():
     hmm = HMM()
 
 
-    number = 100
-    A, B = hmm.train(observations[:number], vocab, states, max_iter=20, tol = 1e-5, r = real_states_sentence, number = number)
+    number = len(observations)
+    A, B = hmm.train(observations[:number], vocab, states, max_iter=100, tol = 1e-18, r = real_states_sentence, number = number, load=False, num_states = len(states))
 
     PostProcessingHMM.full_post_loop(A, B, number, observations, len(states), real_states_sentence)
     
@@ -307,14 +338,14 @@ class PostProcessingHMM:
                         vocab[token["form"]] = count
                         count += 1
 
-                    if token["upos"] not in state_mapping:
-                        state_mapping[token["upos"]] = state_count
+                    if token["xpos"] not in state_mapping:
+                        state_mapping[token["xpos"]] = state_count
                         state_count += 1
 
                     # states.add(token["xpos"])
                     
                     current_sentence.append(vocab[token["form"]])
-                    state_sentence.append(state_mapping[token["upos"]])
+                    state_sentence.append(state_mapping[token["xpos"]])
                     real_sentence.append(token["form"])
 
 
