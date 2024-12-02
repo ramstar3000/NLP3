@@ -1,12 +1,13 @@
 from conllu import parse_incr
 # from HMM import HMM
-from utils import compute_cost
+# from utils import compute_cost
 import numpy as np
 
 # from HMM import HMM
 
 # Create a HMM tagger, we have auxiliary functions in utils
-
+from matplotlib import pyplot as plt
+import seaborn as sns
     
 
 
@@ -39,7 +40,7 @@ def parse_conllu(file_path, debug=False):
     with open(file_path, "r", encoding="utf-8") as f:
         for sentence in parse_incr(f):
             current_sentence = [0]
-            state_sentence = [0]
+            state_sentence = ["<start>"]
             real_sentence = []
 
             for token in sentence:
@@ -71,22 +72,81 @@ def parse_conllu(file_path, debug=False):
                     state_count += 1
 
                 # states.add(token["xpos"])
+
+                # Check for X or unkown token
+                if token["upos"] == "X":
+                    print(token["form"], token["xpos"])
                 
                 current_sentence.append(vocab[token["form"]])
-                state_sentence.append(state_mapping[token["upos"]])
+                state_sentence.append(token["upos"])
                 real_sentence.append(token["form"])
 
 
             current_sentence.append(1)
-            state_sentence.append(1)
+            state_sentence.append("<end>")
             observations.append(current_sentence)
             real_states_sentence += state_sentence
             all_sentences.append(real_sentence)
 
             if debug:
                 return word_data, vocab, observations, state_mapping, real_states_sentence, all_sentences
-
+    raise Exception
     return word_data, vocab, observations, state_mapping, real_states_sentence, all_sentences
+
+
+if __name__ == "__main__":
+
+    file_path = "ptb-train.conllu"
+
+    word_data, vocab, observations, state_mapping, real_states_sentence, all_sentences = parse_conllu(file_path)
+
+    # Want to plot labels for each sentence by freuqency of occurence
+    # We can use real states sentence to get the labels
+
+    # We can use the real states sentence to get the labels and use numpy
+    real_states_sentence = np.array(real_states_sentence)
+
+    # Sort the array
+    unique, counts = np.unique(real_states_sentence, return_counts=True)
+
+    print(unique, counts)
+
+    sorted_indices = np.argsort(counts)[::-1]
+    unique = unique[sorted_indices]
+    counts = counts[sorted_indices]
+
+
+    sns.set_palette("muted")
+    sns.set_style("white")
+
+    # Create a bar plot
+    plt.figure(figsize=(12, 7))
+    sns.barplot(x=unique, y=counts, palette="viridis")
+
+    # Add title and axis labels
+    plt.title("Frequency of Tags in Treebank | XPOS", fontsize=16, weight="bold")
+    plt.xlabel("Tag Type", fontsize=14, weight="bold")
+    plt.ylabel("Frequency", fontsize=14, weight="bold")
+
+    plt.xticks(fontsize=11, rotation=45, ha="right")  # Rotate for better readability
+    plt.yticks(fontsize=10, rotation=-20)
+
+    plt.text(0.5, counts[0], f"{counts[0]}", ha='center', fontsize=9, color='black', weight='semibold')
+
+    for i, value in enumerate(counts):
+        if i % 2 == 1:
+            plt.text(i + 0.2, value + 1.9, f"{value}", ha='center', fontsize=9, color='black', weight='semibold')
+
+    plt.grid(visible=True, which="both", color="gray", linestyle="--", linewidth=0.3, alpha=0.9)
+
+    plt.tight_layout()
+    # Show the plot
+    plt.savefig("graphing/xpos_frequency.png")
+    plt.show()
+
+
+
+
 
 # def main():
     

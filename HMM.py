@@ -1,7 +1,6 @@
 import numpy as np
 from tqdm import tqdm
 from scipy.special import logsumexp
-from main import parse_conllu
 from utils import calculate_v_measure, viterbi
 
 from conllu import parse_incr
@@ -9,7 +8,7 @@ from multiprocessing import Pool
 
 
 
-np.random.seed(0)
+# np.random.seed(0)
 
 # TODO Make it work!!!
 # TODO Graph the convergence
@@ -243,23 +242,7 @@ class HMM:
 
         return self.A, self.B
 
-def main():
-    
-    file_path = "ptb-train.conllu"
 
-    vocab, observations, state_mapping, real_states_sentence = PostProcessingHMM.parse_conllu(file_path)
-    
-    states = list(state_mapping.values()) 
-    print(f"States: {len(states)}")  # Should be 19 or 49?
-
-    hmm = HMM()
-
-
-    number = len(observations)
-    A, B = hmm.train(observations[:number], vocab, states, max_iter=100, tol = 1e-18, r = real_states_sentence, number = number, load=False, num_states = len(states))
-
-    PostProcessingHMM.full_post_loop(A, B, number, observations, len(states), real_states_sentence)
-    
 
 class PostProcessingHMM:
 
@@ -352,7 +335,7 @@ class PostProcessingHMM:
                 current_sentence.append(1)
                 state_sentence.append(1)
                 observations.append(current_sentence)
-                real_states_sentence += state_sentence
+                real_states_sentence.append(state_sentence) # TODO fix
                 all_sentences.append(real_sentence)
 
                 if debug:
@@ -360,6 +343,24 @@ class PostProcessingHMM:
 
         return vocab, observations, state_mapping, real_states_sentence
 
+
+def main():
+    
+    file_path = "ptb-train.conllu"
+
+    vocab, observations, state_mapping, real_states_sentence = PostProcessingHMM.parse_conllu(file_path)
+    
+    states = list(state_mapping.values()) 
+    print(f"States: {len(states)}")  # Should be 19 or 49?
+
+    hmm = HMM()
+
+
+    number = len(observations)
+    A, B = hmm.train(observations[:number], vocab, states, max_iter=100, tol = 1e-18, r = real_states_sentence, number = number, load=False, num_states = len(states))
+
+    PostProcessingHMM.full_post_loop(A, B, number, observations, len(states), real_states_sentence)
+    
 
 if __name__ == "__main__":
 

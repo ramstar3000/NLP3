@@ -1,0 +1,13 @@
+Running with 30 iterations
+Running experiments on fine_grained
+Running with 30 iterations
+Running experiments on fine_grained
+Running on coarse grained
+Scores of this pass 
+ Homo 0.4228972409052402, Comps: 0.4955991793675802, V : 0.45637091429751525
+Scores of this pass 
+ Homo 0.3346852671344382, Comps: 0.3491988628241963, V : 0.34178805902230047
+Scores of this pass 
+ Homo 0.3746904068724619, Comps: 0.42249396618905616, V : 0.39715890436884266
+Scores of this pass 
+ Homo 0.3123968502767665, Comps: 0.2978175343123777, V : 0.3049330269033936

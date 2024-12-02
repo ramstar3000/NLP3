@@ -1,13 +1,12 @@
 import torch
 import numpy as np
-from transformers import AutoTokenizer, AutoModel
 from conllu import parse_incr
-from typing import List
 from sklearn.cluster import KMeans, MiniBatchKMeans
 from utils import calculate_v_measure
 
+from BERT_encoder import BERTEncoder, Dataset
+from data_processor import ExtractData
 import logging
-from main import parse_conllu
 
 # TODO Seperate each class into a new file and add heirarchy
 # TODO Add a main function to run the code, and absract it
@@ -18,173 +17,12 @@ from main import parse_conllu
 # TODO Try and use munkres
 # TODO Move all the pts into a seperate folder
 
+import warnings
+warnings.filterwarnings('ignore')
+
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-
-model_name = 'bert-base-uncased'
-tokenizer = AutoTokenizer.from_pretrained(model_name) # TODO look at BERT tokenizer
-model = AutoModel.from_pretrained(model_name)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
-
-class ExtractData():
-
-    def __init__(self, file_path = "ptb-train.conllu"):
-        self.file_path = file_path
-
-    def extract_data(self):
-        real_states_sentence, lengths = self.parse_conllu_Kmeans()
-        return real_states_sentence, lengths
-    
-    def parse_conllu_Kmeans(self, fine_grained = True):
-        # Ideally want to gather both fine and coarse grained POS tags
-
-        real_states_sentence = []
-        lengths = []
-
-
-        state_mapping = dict()
-        state_count = 0
-
-        tags = "upos"
-        if fine_grained:
-            tags = "xpos"
-
-        with open(self.file_path, "r", encoding="utf-8") as f:
-            for sentence in parse_incr(f):
-                state_sentence = [] 
-
-                for token in sentence:
-
-                    if token[tags] not in state_mapping:
-                        state_mapping[token["xpos"]] = state_count
-                        state_count += 1
-
-                    state_sentence.append(state_mapping[token[tags]])
-
-                lengths.append(len(state_sentence))
-                real_states_sentence.append(state_sentence)
-
-        return real_states_sentence, lengths
-
-
-class BERTEncoder():
-
-    def __init__(self):
-        self.model_name = 'bert-base-uncased'
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self.model = AutoModel.from_pretrained(self.model_name)
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
-
-
-    def bert_trial(self):
-        """
-        This function is used to test the BERT model, tokeniser and torch setup
-        """
-        sentence = "The cat sat on the mat mat mat"
-        inputs = self.tokenizer(sentence, return_tensors="pt")
-
-        inputs.to(self.device)
-
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-
-        last_hidden_states = outputs.last_hidden_state[0]
-
-        
-        logging.debug("BERT trial")
-        logging.debug(last_hidden_states.shape)
-        logging.info(last_hidden_states)
-        logging.info("BERT trial complete")
-
-    def bert_batch(self, sentences_raw : List[List[str]] ):
-        """
-        This function is used to generate the embeddings for the sentences in the dataset
-        
-        Input:
-        sentences_raw: List of sentences, where each sentence is a list of words
-
-        Output:
-        None
-
-        Effect:
-        Saves the embeddings, attention masks and word mappings to the disk
-        This is done to save memory and allow for the processing of large datasets
-        """
-
-
-        output_embeddings = []
-        output_attention_masks = []
-        word_mappings =  []
-
-        dataset = Dataset(sentences_raw, tokenizer)
-        DataLoader = torch.utils.data.DataLoader(dataset, batch_size=2000) # TODO Analyse this further
-
-        for sentences in DataLoader:
-
-            input_ids = sentences['input_ids'].to(self.device)
-            attention_mask = sentences['attention_mask'].to(self.device)
-
-
-            with torch.no_grad(): # no grad is used to save memory
-                outputs = model(input_ids, attention_mask=attention_mask)
-
-
-            last_hidden_states = outputs.last_hidden_state
-            word_ids = sentences['word_ids'].cpu()
-
-            output_embeddings.append(last_hidden_states.cpu())
-            output_attention_masks.append(attention_mask.cpu())
-            word_mappings.append(word_ids)
-
-            logging.debug(last_hidden_states.shape)
-
-
-            # Deallocation of the GPU memory for next batch
-            del last_hidden_states
-            del attention_mask
-            del word_ids
-
-            logging.debug( f"We currently have {len(output_embeddings)}" )
-
-
-        torch.save(output_embeddings, "output_embeddings.pt")
-        torch.save(output_attention_masks, "output_attention_masks.pt")
-        torch.save(word_mappings, "word_mappings.pt")
-        
-
-    @staticmethod
-    def load_bert_batch():
-        output_embeddings = torch.load("output_embeddings.pt")
-        output_attention_masks = torch.load("output_attention_masks.pt")
-        word_mappings = torch.load("word_mappings.pt")
-
-        return output_embeddings, output_attention_masks, word_mappings
-
-
-class Dataset(torch.utils.data.Dataset):
-    def __init__(self, sentences, tokeniser, max_length = 100):
-        self.sentences = sentences
-        self.tokeniser = tokeniser
-        self.max_length = max_length
-
-    def __len__(self):
-        return len(self.sentences)
-
-    def __getitem__(self, index):
-        sentence = self.sentences[index]
-
-        encoding = self.tokeniser(sentence, return_tensors="pt", padding='max_length', truncation=True, max_length=self.max_length, is_split_into_words=True)
-
-        return {
-            'input_ids': encoding['input_ids'].squeeze(0),
-            'attention_mask': encoding['attention_mask'].squeeze(0),
-            'word_ids': np.array([x if x is not None else np.nan for x in encoding.word_ids()])
-        }
     
 class KMeans():
 
@@ -207,9 +45,9 @@ class KMeans():
 
         return output_labels
     
-    def main(self):
+    def main(self, fine_grained = True, max_iter = 100):
         
-        real_states_sentence, lengths = ExtractData().extract_data()
+        real_states_sentence, lengths = ExtractData().extract_data(fine_grained)
 
         num_states = np.unique(np.concatenate(real_states_sentence)).shape[0]
 
@@ -217,30 +55,52 @@ class KMeans():
 
         embeddings, attention_mask, word_mappings = BERTEncoder.load_bert_batch()
 
-        mbk = MiniBatchKMeans(n_clusters=num_states, batch_size=len(embeddings), max_iter=100)
 
-        for l in range(len(embeddings)):
-            combined_embeddings = embeddings[l]
-            attention = attention_mask[l]
+        mbk = MiniBatchKMeans(n_clusters=num_states, batch_size=800000, max_iter=max_iter, tol=1e-20, verbose=0)
+        # Note batch size is in words, need to redo our calculuations lmao
 
+        # for l in range(len(embeddings)):
+        #     combined_embeddings = embeddings[l]
+        #     attention = attention_mask[l]
+
+
+        #     reshaped_embeddings = combined_embeddings.view(-1, 768)
+        #     reshape_attention = attention.view(-1)
+
+        #     # The attention mask is used to remove the padding from the embeddings
+        #     # logging.debug(reshaped_embeddings[reshape_attention.bool()].shape)
+
+        #     # mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()][: 1000].numpy())
+        #     # mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()][1000: ].numpy())    
+
+        #     mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()].numpy())
+        
+        for l in range(0, len(embeddings) - 1, 4):
+            combined_embeddings = torch.cat((embeddings[l: l+4]), dim=0)
+            attention = torch.cat((attention_mask[l: l+4]), dim=0)
 
             reshaped_embeddings = combined_embeddings.view(-1, 768)
             reshape_attention = attention.view(-1)
 
             # The attention mask is used to remove the padding from the embeddings
-            logging.debug(reshaped_embeddings[reshape_attention.bool()].shape)
+            # logging.debug(reshaped_embeddings[reshape_attention.bool()].shape)
             mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()].numpy())
 
-        # Shape is [num_sentences, 100, 768] where 100 = max_length and 768 = embedding size
-        total_embeddings = torch.cat(embeddings, dim=0)
-        reshaped_embeddings = total_embeddings.view(-1, 768)
+        overall_predictions = []
 
-        # Now we need to reshape the predictions back to the original shape of [num_sentences, num_words]
-        predictions = mbk.predict(reshaped_embeddings.numpy())
-        predictions = predictions.reshape(total_embeddings.shape[0], total_embeddings.shape[1])
+        # Shape is [num_sentences, 100, 768] where 100 = max_length and 768 = embedding size
+        for total_embeddings in embeddings: # Total embeddings is of shape [num_sentences, 100, 768], num_sentences = 2000
+            reshaped_embeddings = total_embeddings.view(-1, 768)
+
+            # Now we need to reshape the predictions back to the original shape of [num_sentences, num_words]
+            predictions = mbk.predict(reshaped_embeddings.numpy()) # This is of shape [num_sentences * 100]
+            predictions = predictions.reshape(-1, 100)
+            overall_predictions.append(predictions)
+
 
         # Now we use the word_mappings to get the real states of the words, this is of shape [batch, num_sentences, num_words], we need to flatten this to [num_sentences, num_words]
         word_mappings = torch.cat(word_mappings, dim=0)
+        predictions = np.concatenate(overall_predictions, axis=0)
 
         # Now we want to extract the true labels using this word mapping, we have the function aggregate_predictions to do this, loop over each sentence and aggregate the predictions
         predicted_labels = []
@@ -259,38 +119,72 @@ class KMeans():
                 continue
 
 
-        logger.info("Printing the lengths of the predicted and real labels")
-        logger.debug(len(np.concatenate(predicted_labels, axis=0)))
-        logger.debug(len(real_states_sentence))
+        # logger.info("Printing the lengths of the predicted and real labels")
+        # logger.debug(len(np.concatenate(predicted_labels, axis=0)))
+        # logger.debug(len(real_states_sentence))
 
         homo_score, comp_score, v_score = calculate_v_measure(np.concatenate(predicted_labels, axis=0) , np.concatenate(real_labels, axis = 0))
         logger.info(f"Scores of this pass \n Homo {homo_score}, Comps: {comp_score}, V : {v_score}")
-
+        print(f"Scores of this pass \n Homo {homo_score}, Comps: {comp_score}, V : {v_score}")
+        # Save the model: TODO
+        return homo_score, comp_score, v_score
 
 
 if __name__ == "__main__":
 
-    Kmeans = KMeans()
-    Kmeans.main()
 
+    # Kmeans = KMeans()
 
-def create_embeddings():
+    # print("Running with 30 iterations")
+
+    # print("Running experiments on fine_grained")
+    # Kmeans.main(fine_grained=True, max_iter=30)
+
     
-    file_path = "ptb-train.conllu"
-    word_data, vocab, observations, state_mapping, real_states_sentence, sentences = parse_conllu(file_path) # TODO Make it a seperate function, add testing etc
-    b = BERTEncoder()
-    b.bert_batch(sentences[:])
+    # print("Running experiments on fine_grained 100")
+    # Kmeans.main(fine_grained=True, max_iter=100)
+
+    # print("Running on coarse grained")
+    # Kmeans.main(fine_grained=False, max_iter=30)
+
+    # print("Repeating with 100 iterations")
+    # print("Running on coarse grained 100")
+    # Kmeans.main(fine_grained=False, max_iter=100)
+
+    Kmeans = KMeans()
+    results_fine = []
+    results_coarse = []
+
+    for _ in range(5):
+        results_fine.append(Kmeans.main(fine_grained=True, max_iter=30))
+        results_coarse.append(Kmeans.main(fine_grained=False, max_iter=30))
+
+    results_coarse = np.array(results_coarse)
+    results_fine = np.array(results_fine)
+
+    # Print the variance and mean across each element of the tuple, 
+    fine_mean = np.mean(results_fine, axis=0)  # Mean of each metric (homogeneity, completeness, V-measure)
+    fine_var = np.var(results_fine, axis=0)    # Variance of each metric
+
+    # Calculate mean and variance for coarse-grained results
+    coarse_mean = np.mean(results_coarse, axis=0)
+    coarse_var = np.var(results_coarse, axis=0)
+
+    print("Fine-Grained Results:")
+    print(f"Mean: Homogeneity={fine_mean[0]:.4f}, Completeness={fine_mean[1]:.4f}, V-Measure={fine_mean[2]:.4f}")
+    print(f"Variance: Homogeneity={fine_var[0]:.4f}, Completeness={fine_var[1]:.4f}, V-Measure={fine_var[2]:.4f}")
+
+    print("\nCoarse-Grained Results:")
+    print(f"Mean: Homogeneity={coarse_mean[0]:.4f}, Completeness={coarse_mean[1]:.4f}, V-Measure={coarse_mean[2]:.4f}")
+    print(f"Variance: Homogeneity={coarse_var[0]:.4f}, Completeness={coarse_var[1]:.4f}, V-Measure={coarse_var[2]:.4f}")
 
 
-class Tests:
 
-    @staticmethod
-    def test_bert_encoder():
-        """
-        This function is used to test the BERT encoder class
-        """
-        # TODO add the trial function to this class rather than the other
-        bert_encoder = BERTEncoder()
+# def create_embeddings():
+    
+#     file_path = "ptb-train.conllu"
+#     word_data, vocab, observations, state_mapping, real_states_sentence, sentences = parse_conllu(file_path) # TODO Make it a seperate function, add testing etc
+#     b = BERTEncoder()
+#     b.bert_batch(sentences)
 
-        bert_encoder.bert_trial()
-    pass
+
