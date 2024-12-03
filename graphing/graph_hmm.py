@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import seaborn as sns
+import numpy as np
 
 # Multiline string containing V-measure score data
 raw_data_upos = """0.18689497642613376
@@ -16,7 +17,7 @@ raw_data_upos = """0.18689497642613376
 0.34103010749131657
 """
 
-raw_data_xpos = """0.2338609162037913
+raw_data_xpos1 = """0.2338609162037913
 0.2569613592293613
 0.2748768916792237
 0.27945620900122403
@@ -29,11 +30,37 @@ raw_data_xpos = """0.2338609162037913
 0.4187432772540536
 """
 
+raw_data_xpos2 = """0.230979501901489
+0.26596428509654535
+0.29876391922093526
+0.30475310501080644
+0.3133434615265795
+0.3496141351507055
+0.3813299263388876
+0.396311951958484
+0.3937118992958243
+"""
+
+
 # Convert raw data to a list of floating-point numbers and create corresponding x values (iterations)
 v_measure_scores_upos = [float(score) for score in raw_data_upos.splitlines()]
-v_measure_scores_xpos = [float(score) for score in raw_data_xpos.splitlines()]
-iterations = [i * 3 for i in range(len(v_measure_scores_upos))]
-iterations_xpos = [i * 3 + 1 for i in range(len(v_measure_scores_xpos))]
+v_measure_scores_xpos1 = [float(score) for score in raw_data_xpos1.splitlines()]
+v_measure_scores_xpos2 = [float(score) for score in raw_data_xpos2.splitlines()]
+
+v_measure_scores_xpos1 = np.array(v_measure_scores_xpos1)
+v_measure_scores_xpos2 = np.array(v_measure_scores_xpos2)
+
+# Add the arrays and divide by 2 to get the average, pad the arrays to the same length
+v_measure_scores_xpos = np.zeros(max(len(v_measure_scores_xpos1), len(v_measure_scores_xpos2)))
+v_measure_scores_xpos = v_measure_scores_xpos1
+v_measure_scores_xpos[:len(v_measure_scores_xpos2)] += v_measure_scores_xpos2
+v_measure_scores_xpos[:len(v_measure_scores_xpos2)] /= 2
+
+
+v_measure_scores_xpos = [ (v_measure_scores_xpos1[i] + v_measure_scores_xpos2[i]) / 2 for i in range(len(v_measure_scores_xpos2))]
+
+iterations = [i * 3  + 1 for i in range(len(v_measure_scores_upos))]
+iterations_xpos = [i * 3 + 2 for i in range(len(v_measure_scores_xpos))]
 outdir = "graphing/hmm.png"
 # Set up the plot style
 sns.set_style("whitegrid")
@@ -53,6 +80,6 @@ plt.title("V-measure Score per Iteration | HMM", fontsize=16)
 plt.xlabel("Iteration Number", fontsize=14)
 plt.ylabel("V-measure Score", fontsize=14)
 
-plt.savefig(outdir)
+# plt.savefig(outdir)
 
 plt.show()
