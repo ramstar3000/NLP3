@@ -106,7 +106,6 @@ python *.py
 
 This will run the graphing for the project. There are various files generated for the different metrics that are calculated.
 
-
 # License
 
 This project is open source, no license exists for this project.

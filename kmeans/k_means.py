@@ -1,10 +1,9 @@
 import torch
 import numpy as np
-from conllu import parse_incr
 from sklearn.cluster import KMeans, MiniBatchKMeans
 from utils import calculate_v_measure
 
-from BERT_encoder import BERTEncoder, Dataset
+from BERT_encoder import BERTEncoder
 from data_processor import ExtractData
 import logging
 
