@@ -70,10 +70,10 @@ class KMeans():
 
         embeddings_padded_length = 100 # Is 150 for some embeddings, here 100 for speed
 
-        batch_size = 200000
+        batch_size = 200000 # This is the maximum number of words we can have in a batch
         mbk = MiniBatchKMeans(n_clusters=num_states, batch_size=batch_size, max_iter=max_iter, tol=1e-20, verbose=0)
-        # Note batch size is in words, need to redo our calculuations lmao
-        if batch_size <= 200000:
+    
+        if batch_size <= 200000: # In our list of tensors, each has 2000 sentences == 2000 * n = 200000 words in this example
             for l in range(len(embeddings)):
                 combined_embeddings = embeddings[l]
                 attention = attention_mask[l]
@@ -86,7 +86,7 @@ class KMeans():
 
                 mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()].numpy())
 
-        else: # This is the case where we have more than 200000 words in a batch
+        else: # This is the case where we have more than 2000 sentences in a batch
             for l in range(0, len(embeddings) - 1, 4):
                 combined_embeddings = torch.cat((embeddings[l: l+4]), dim=0)
                 attention = torch.cat((attention_mask[l: l+4]), dim=0)
@@ -141,17 +141,16 @@ def main():
 
         print("Running experiments on fine_grained")
         Kmeans.main(fine_grained=True, max_iter=30)
-
         
-        # print("Running experiments on fine_grained 100")
-        # Kmeans.main(fine_grained=True, max_iter=100)
+        print("Running experiments on fine_grained 100")
+        Kmeans.main(fine_grained=True, max_iter=100)
 
-        # print("Running on coarse grained")
-        # Kmeans.main(fine_grained=False, max_iter=30)
+        print("Running on coarse grained")
+        Kmeans.main(fine_grained=False, max_iter=30)
 
-        # print("Repeating with 100 iterations")
-        # print("Running on coarse grained 100")
-        # Kmeans.main(fine_grained=False, max_iter=100)
+        print("Repeating with 100 iterations")
+        print("Running on coarse grained 100")
+        Kmeans.main(fine_grained=False, max_iter=100)
 
     else:
 

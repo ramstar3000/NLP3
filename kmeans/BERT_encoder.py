@@ -101,7 +101,6 @@ class BERTEncoder():
 
             logging.debug( f"We currently have {len(output_embeddings)}" )
 
-
         torch.save(output_embeddings, "output_embeddings2.pt")
         torch.save(output_attention_masks, "output_attention_masks2.pt")
         torch.save(word_mappings, "word_mappings2.pt")
@@ -114,12 +113,12 @@ class BERTEncoder():
         """
 
         if not basic:
-            output_embeddings = torch.load("output_embeddings2.pt")
+            output_embeddings = torch.load("output_embeddings2.pt") # This set of files is used for the average of the hidden states
             output_attention_masks = torch.load("output_attention_masks2.pt")
             word_mappings = torch.load("word_mappings2.pt")
 
         else:
-            output_embeddings = torch.load("output_embeddings.pt")
+            output_embeddings = torch.load("output_embeddings.pt") # This set of files is used for the last hidden state
             output_attention_masks = torch.load("output_attention_masks.pt")
             word_mappings = torch.load("word_mappings.pt")
 
