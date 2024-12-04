@@ -1,6 +1,0 @@
-Running with 30 iterations
-Running experiments on fine_grained
-Running on coarse grained
-Repeating with 100 iterations
-Running experiments on fine_grained
-Running on coarse grained
