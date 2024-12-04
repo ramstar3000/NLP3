@@ -30,7 +30,7 @@ class BERTEncoder():
         with torch.no_grad():
             outputs = self.model(**inputs)
 
-        last_hidden_states = outputs.last_hidden_state[0]
+        last_hidden_states = outputs.last_hidden_state[0] # The last hidden-state is the first element of the output tuple
 
         
         logging.debug("BERT trial")

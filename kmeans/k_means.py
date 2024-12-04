@@ -98,12 +98,12 @@ class KMeans():
 
         overall_predictions = []
 
-        # Shape is [num_sentences, 100, 768] where 100 = max_length and 768 = embedding size
-        for total_embeddings in embeddings: # Total embeddings is of shape [num_sentences, 100, 768], num_sentences = 2000
+        # Shape is [num_sentences, n, 768] where n = max_length_embedding and 768 = embedding size
+        for total_embeddings in embeddings: # Total embeddings is of shape [num_sentences, n, 768], num_sentences = 2000
             reshaped_embeddings = total_embeddings.view(-1, 768)
 
             # Now we need to reshape the predictions back to the original shape of [num_sentences, num_words]
-            predictions = mbk.predict(reshaped_embeddings.numpy()) # This is of shape [num_sentences * 100]
+            predictions = mbk.predict(reshaped_embeddings.numpy()) # This is of shape [num_sentences * n]
             predictions = predictions.reshape(-1, embeddings_padded_length)
             overall_predictions.append(predictions)
 
@@ -122,8 +122,8 @@ class KMeans():
                 predicted_labels.append(temp)
                 real_labels.append(real_states_sentence[i])
                 pass
-            else:
-                raise ValueError(f"Lengths do not match {len(temp)} and {lengths[i]} | Probably need to increase the embeddings pad size")
+            # else:
+            #     raise ValueError(f"Lengths do not match {len(temp)} and {lengths[i]} | Probably need to increase the embeddings pad size")
 
         homo_score, comp_score, v_score = calculate_v_measure(np.concatenate(predicted_labels, axis=0) , np.concatenate(real_labels, axis = 0))
         logger.info(f"Scores of this pass \n Homo {homo_score}, Comps: {comp_score}, V : {v_score}")
@@ -132,7 +132,7 @@ class KMeans():
 
 def main():
 
-    iterations = True
+    iterations = True # Chooses which branch of the coda you want to run
 
     if iterations:
         Kmeans = KMeans()
@@ -143,15 +143,15 @@ def main():
         Kmeans.main(fine_grained=True, max_iter=30)
 
         
-        print("Running experiments on fine_grained 100")
-        Kmeans.main(fine_grained=True, max_iter=100)
+        # print("Running experiments on fine_grained 100")
+        # Kmeans.main(fine_grained=True, max_iter=100)
 
-        print("Running on coarse grained")
-        Kmeans.main(fine_grained=False, max_iter=30)
+        # print("Running on coarse grained")
+        # Kmeans.main(fine_grained=False, max_iter=30)
 
-        print("Repeating with 100 iterations")
-        print("Running on coarse grained 100")
-        Kmeans.main(fine_grained=False, max_iter=100)
+        # print("Repeating with 100 iterations")
+        # print("Running on coarse grained 100")
+        # Kmeans.main(fine_grained=False, max_iter=100)
 
     else:
 

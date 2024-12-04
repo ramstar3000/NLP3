@@ -1,6 +1,6 @@
 import numpy as np
 from collections import Counter
-from sklearn.metrics.cluster import homogeneity_score, completeness_score, v_measure_score
+from sklearn.metrics.cluster import homogeneity_score, completeness_score, v_measure_score, adjusted_mutual_info_score
 
 
 def viterbi(observations, num_states, transition_prob, emission_prob):
@@ -43,5 +43,6 @@ def calculate_v_measure(true_labels, predicted_labels):
     homo_score = homogeneity_score(true_labels, predicted_labels)
     comp_score = completeness_score(true_labels, predicted_labels)
     v_score = v_measure_score(true_labels, predicted_labels)
+    print(adjusted_mutual_info_score(true_labels, predicted_labels))
     return homo_score, comp_score, v_score
 
