@@ -11,6 +11,15 @@ class ExtractData():
         return real_states_sentence, lengths
     
     def parse_conllu_Kmeans(self, fine_grained = True):
+        """
+        Input:
+        - file_path: The conllu file
+        - fine_grained: Type of tag ; boolean for tags
+
+        Output:
+        - real_states_sentence: array
+        - lengths: array
+        """
 
         real_states_sentence = []
         lengths = []
@@ -40,3 +49,23 @@ class ExtractData():
 
         return real_states_sentence, lengths
 
+    def parse_conllu_embeddings(self, file_path):
+        """
+        Input:
+        - file_path: The conllu file
+
+        Output:
+        - all_sentences: List
+        """
+        all_sentences = []
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            for sentence in parse_incr(f):
+                real_sentence = []
+
+                for token in sentence:
+                    real_sentence.append(token["form"])
+
+                all_sentences.append(real_sentence)
+
+        return all_sentences

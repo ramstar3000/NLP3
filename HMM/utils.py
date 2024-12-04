@@ -1,5 +1,5 @@
 import numpy as np
-from munkres import Munkres, print_matrix
+from munkres import Munkres
 from collections import Counter
 from sklearn.metrics.cluster import homogeneity_score, completeness_score, v_measure_score
 
@@ -23,10 +23,6 @@ def compute_cost(zt, zt_real):
     zt_real = np.array(zt_real)
 
     all_states = np.unique( np.concatenate((zt, zt_real)) )
-    state_map = {state: i for i, state in enumerate(all_states)}
-
-    # zt_mapped = np.array([state_map[state] for state in zt])
-    # zt_real_mapped = np.array([state_map[state] for state in zt_real])
 
     K_use = len(all_states)
 
@@ -65,40 +61,6 @@ def kl_divergence(P, Q):
     filtered_P = P[mask]
     filtered_Q = Q[mask]
     return np.sum(filtered_P * np.log(filtered_P / filtered_Q))
-
-
-def viterbi(observations, num_states, transition_prob, emission_prob):
-    V = np.zeros((num_states, len(observations)))
-    path = {}
-    # first column of V is the transition prob from state 0
-    V[:, 0] = transition_prob[0, :]
-
-    for t in range(1, len(observations)):
-        for s in range(num_states):
-            prob = V[:, t - 1] * transition_prob[:, s] * emission_prob[s - 1, observations[t]]
-            V[s, t] = np.max(prob)
-            path[s, t] = np.argmax(prob)
-
-    optimal_path = []
-    last_state = np.argmax(V[:, -1])
-    optimal_path.append(last_state)
-
-    for t in range(len(observations) - 1, 1, -1):
-        last_state = path[last_state, t]
-        optimal_path.insert(0, last_state)
-
-    optimal_path.insert(0, 0)
-
-    return optimal_path
-
-
-def set_print_options():
-    np.set_printoptions(suppress=True, precision=4)
-    np.set_printoptions(linewidth=180)
-    np.set_printoptions(formatter={'int': '{:5d}'.format})
-
-def flatten(lists):
-    return [element for l in lists for element in l]
 
 
 def calculate_entropy(cluster):

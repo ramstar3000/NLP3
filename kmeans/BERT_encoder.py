@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
 from typing import List
+from data_processor import ExtractData
 
 import logging
 
@@ -37,7 +38,7 @@ class BERTEncoder():
         logging.info(last_hidden_states)
         logging.info("BERT trial complete")
 
-    def bert_batch(self, sentences_raw : List[List[str]] ):
+    def bert_batch(self, sentences_raw : List[List[str]], basic = True):
         """
         This function is used to generate the embeddings for the sentences in the dataset
         
@@ -58,7 +59,7 @@ class BERTEncoder():
         word_mappings =  []
 
         dataset = Dataset(sentences_raw, self.tokenizer)
-        DataLoader = torch.utils.data.DataLoader(dataset, batch_size=2000) # TODO Analyse this further
+        DataLoader = torch.utils.data.DataLoader(dataset, batch_size=800)
 
         for sentences in DataLoader:
 
@@ -67,37 +68,56 @@ class BERTEncoder():
 
 
             with torch.no_grad(): # no grad is used to save memory
-                outputs = self.model(input_ids, attention_mask=attention_mask)
+                outputs = self.model(input_ids, attention_mask=attention_mask, output_hidden_states=True)
 
-
-            last_hidden_states = outputs.last_hidden_state
             word_ids = sentences['word_ids'].cpu()
 
-            output_embeddings.append(last_hidden_states.cpu())
+            
+            if basic:
+                last_hidden_states = outputs.last_hidden_state
+                output_embeddings.append(last_hidden_states.cpu())
+
+                del last_hidden_states
+            
+            else:
+                # Take the average of all the hidden states
+                hidden_states = outputs.hidden_states # Tuple of 13 tensors
+
+                average_hidden_states = torch.mean(torch.stack(hidden_states), dim=0)
+
+                print(average_hidden_states.shape)
+
+                output_embeddings.append(average_hidden_states.cpu())
+
+                del average_hidden_states
+
+
             output_attention_masks.append(attention_mask.cpu())
             word_mappings.append(word_ids)
 
-            logging.debug(last_hidden_states.shape)
-
-
             # Deallocation of the GPU memory for next batch
-            del last_hidden_states
             del attention_mask
             del word_ids
 
             logging.debug( f"We currently have {len(output_embeddings)}" )
 
 
-        torch.save(output_embeddings, "output_embeddings.pt")
-        torch.save(output_attention_masks, "output_attention_masks.pt")
-        torch.save(word_mappings, "word_mappings.pt")
+        torch.save(output_embeddings, "output_embeddings2.pt")
+        torch.save(output_attention_masks, "output_attention_masks2.pt")
+        torch.save(word_mappings, "word_mappings2.pt")
         
 
     @staticmethod
-    def load_bert_batch():
-        output_embeddings = torch.load("output_embeddings.pt")
-        output_attention_masks = torch.load("output_attention_masks.pt")
-        word_mappings = torch.load("word_mappings.pt")
+    def load_bert_batch(basic = True):
+        if not basic:
+            output_embeddings = torch.load("output_embeddings2.pt")
+            output_attention_masks = torch.load("output_attention_masks2.pt")
+            word_mappings = torch.load("word_mappings2.pt")
+
+        else:
+            output_embeddings = torch.load("output_embeddings.pt")
+            output_attention_masks = torch.load("output_attention_masks.pt")
+            word_mappings = torch.load("word_mappings.pt")
 
         return output_embeddings, output_attention_masks, word_mappings
 
@@ -122,3 +142,12 @@ class Dataset(torch.utils.data.Dataset):
             'word_ids': np.array([x if x is not None else np.nan for x in encoding.word_ids()])
         }
 
+
+def create_embeddings():   
+    file_path = "ptb-train.conllu"
+    sentences = ExtractData().parse_conllu_embeddings(file_path)
+    b = BERTEncoder()
+    b.bert_batch(sentences, basic=False)
+
+if __name__ == "__main__":
+    create_embeddings()
