@@ -3,22 +3,9 @@ from tqdm import tqdm
 from scipy.special import logsumexp
 from multiprocessing import Pool
 from processing import ProcessingHMM
-
+from utils import normalize_log_probs
 
 # np.random.seed(0) for reproducibility
-
-def normalize_log_probs(log_probs):
-    """
-    This function will normalise the log probabilities
-    Input:
-    - log_probs: The log probabilities : np.array
-    Output:
-    - The normalised log probabilities : np.array
-    """
-
-    # Only calculate the log sum of the none -inf values
-    log_sum = logsumexp(log_probs, axis = 1, keepdims=True)
-    return log_probs - log_sum
 
 
 class HMM:
@@ -154,7 +141,7 @@ class HMM:
             self.A = np.log(self.A + 1e-10)
             self.B = np.log(self.B + 1e-10)
 
-            self.A = normalize_log_probs(self.A) # TODO Analyse
+            self.A = normalize_log_probs(self.A)
             self.B = normalize_log_probs(self.B)
 
             return

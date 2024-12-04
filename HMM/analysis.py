@@ -15,8 +15,6 @@ def predict(A, B, observations, num_states):
     paths  = []
 
     for obs in observations:
-        
-        # Can use HMM().viterbi() to get the most likely sequence of states
         path = ProcessingHMM.viterbi(obs, num_states, A, B)
         paths.append(path)
 
@@ -56,7 +54,7 @@ def analyse():
     print("Real States: ", real_states)
     print("Predicted States: ", predicted_states)
 
-    cost, map = compute_cost(real_states, predicted_states)
+    _, map = compute_cost(real_states, predicted_states)
     print("Map: ", map)
 
 

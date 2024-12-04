@@ -2,6 +2,7 @@ import numpy as np
 from munkres import Munkres
 from collections import Counter
 from sklearn.metrics.cluster import homogeneity_score, completeness_score, v_measure_score
+from scipy.special import logsumexp
 
 
 def compute_cost(zt, zt_real):
@@ -38,21 +39,6 @@ def compute_cost(zt, zt_real):
     total = sum([cost_mat[row][column] for row, column in indexes])
     return total, indexes
 
-
-def euclidean_distance(A, B):
-    assert A.shape == B.shape, "two matrices should have the same shape"
-    return np.sqrt(np.sum((A - B) ** 2))
-
-
-def difference(A, B):
-    assert len(A) == len(B), "two hidden states set should have the same length"
-    miss_sum = 0
-    tot_num = 0
-    for i in range(len(A)):
-        assert len(A[i]) == len(B[i])
-        miss_sum += np.sum(np.array(A[i]) != np.array(B[i]))
-        tot_num += len(A[i])
-    return miss_sum, tot_num
 
 
 def kl_divergence(P, Q):
@@ -103,3 +89,15 @@ def calculate_v_measure(true_labels, predicted_labels):
     v_score = v_measure_score(true_labels, predicted_labels)
     return homo_score, comp_score, v_score
 
+
+def normalize_log_probs(log_probs):
+    """
+    This function will normalise the log probabilities
+    Input:
+    - log_probs: The log probabilities : np.array
+    Output:
+    - The normalised log probabilities : np.array
+    """
+
+    log_sum = logsumexp(log_probs, axis = 1, keepdims=True)
+    return log_probs - log_sum

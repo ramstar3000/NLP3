@@ -1,0 +1,124 @@
+aiohappyeyeballs @ file:///C:/b/abs_b505trsapr/croot/aiohappyeyeballs_1725434036096/work
+aiohttp @ file:///C:/b/abs_13j6efxjb7/croot/aiohttp_1725529348885/work
+aiosignal @ file:///tmp/build/80754af9/aiosignal_1637843061372/work
+asn1crypto==1.2.0
+async-timeout @ file:///C:/b/abs_c8fgiuixkq/croot/async-timeout_1703097556097/work
+atomicwrites==1.4.1
+attrs==19.3.0
+blis==0.4.1
+boto==2.49.0
+boto3==1.10.23
+botocore==1.13.23
+Bottleneck @ file:///C:/b/abs_f05kqh7yvj/croot/bottleneck_1707864273291/work
+Brotli @ file:///C:/b/abs_3d36mno480/croot/brotli-split_1714483178642/work
+catalogue==1.0.2
+certifi==2022.12.7
+cffi==1.13.2
+chardet==3.0.4
+charset-normalizer @ file:///croot/charset-normalizer_1721748349566/work
+Click==7.0
+colorama==0.4.1
+conllu==6.0.0
+contourpy==1.1.1
+cryptography==3.3.2
+cycler==0.12.1
+cymem @ file:///D:/bld/cymem_1695443656212/work
+cytoolz==0.9.0.1
+datasets @ file:///C:/b/abs_a3jy4vrfuo/croot/datasets_1684484478038/work
+dill==0.3.6
+docutils==0.15.2
+dpcpp-cpp-rt==2025.0.0
+filelock==3.0.12
+fonttools==4.55.0
+frozenlist @ file:///C:/b/abs_d8e__s1ys3/croot/frozenlist_1698702612014/work
+fsspec @ file:///C:/b/abs_02vh2bpxfo/croot/fsspec_1724855601370/work
+funcsigs==1.0.2
+gensim==3.8.1
+huggingface_hub @ file:///C:/b/abs_6f4hr2sio5/croot/huggingface_hub_1724853960198/work
+idna==2.8
+importlib-metadata==0.23
+importlib_resources==6.4.5
+intel-cmplr-lib-rt==2025.0.0
+intel-cmplr-lib-ur==2025.0.0
+intel-cmplr-lic-rt==2025.0.0
+intel-opencl-rt==2025.0.0
+intel-openmp==2025.0.0
+intel-sycl-rt==2025.0.0
+Jinja2==3.1.3
+jmespath==0.9.4
+joblib==1.4.2
+jsonschema==3.2.0
+kiwisolver==1.4.7
+MarkupSafe==2.1.5
+matplotlib==3.7.5
+mkl==2025.0.0
+mkl-fft==1.3.0
+mkl-random==1.2.2
+mkl-service==2.4.0
+more-itertools==7.2.0
+mpmath==1.3.0
+msgpack==0.6.1
+msgpack-numpy==0.4.3.2
+multidict @ file:///C:/b/abs_44ido987fv/croot/multidict_1701097803486/work
+multiprocess @ file:///C:/b/abs_ca0rg6wl6_/croot/multiprocess_1668006439310/work
+munkres==1.1.4
+murmurhash==1.0.2
+networkx==3.0
+numexpr @ file:///C:/b/abs_afm0oewmmt/croot/numexpr_1683221839116/work
+numpy==1.23.0
+olefile==0.46
+packaging==24.2
+pandas @ file:///C:/miniconda3/conda-bld/pandas_1692299636855/work
+pillow==10.4.0
+plac==0.9.6
+pluggy==0.13.0
+preshed==3.0.9
+protobuf==3.18.3
+py==1.10.0
+pyarrow @ file:///C:/b/abs_cbc4sg_1e0/croot/pyarrow_1721664257308/work/python
+pycparser==2.19
+pyOpenSSL==19.1.0
+pyparsing==2.4.5
+pyrsistent==0.15.5
+PySocks @ file:///C:/ci/pysocks_1605287845585/work
+pytest==5.3.0
+python-dateutil @ file:///C:/b/abs_3au_koqnbs/croot/python-dateutil_1716495777160/work
+pytz @ file:///C:/b/abs_6ap4tsz1ox/croot/pytz_1713974360290/work
+PyYAML==5.4
+redis==3.3.11
+regex==2019.11.1
+requests==2.22.0
+responses @ file:///tmp/build/80754af9/responses_1619800270522/work
+s3transfer==0.2.1
+safetensors @ file:///C:/b/abs_f8a0oan4c9/croot/safetensors_1729663460267/work
+scikit-learn==1.3.2
+scipy==1.5.4
+seaborn==0.13.2
+six==1.13.0
+smart_open==1.9.0
+spacy==2.3.8
+srsly==1.0.7
+sympy==1.13.1
+tbb==2022.0.0
+tcmlib==1.2.0
+thinc==7.4.1
+threadpoolctl==3.5.0
+tokenizers @ file:///C:/b/abs_dbyirlxdi3/croot/tokenizers_1729696708579/work
+toolz==0.10.0
+torch==2.4.1+cu118
+torchaudio==2.4.1+cu118
+torchvision==0.19.1+cu118
+tqdm==4.67.1
+transformers @ file:///C:/b/abs_2bgndud1b2/croot/transformers_1729767177936/work
+typing_extensions @ file:///C:/b/abs_0as9mdbkfl/croot/typing_extensions_1715268906610/work
+tzdata @ file:///croot/python-tzdata_1690578112552/work
+ujson==5.4.0
+umf==0.9.0
+urllib3==1.25.11
+wasabi==0.10.1
+wcwidth==0.1.7
+win-inet-pton @ file:///C:/ci/win_inet_pton_1605306167264/work
+wrapt==1.10.11
+xxhash @ file:///C:/b/abs_e59ry5bslh/croot/python-xxhash_1667919514787/work
+yarl @ file:///C:/b/abs_00rcuicx5k/croot/yarl_1726015884215/work
+zipp==3.20.2
