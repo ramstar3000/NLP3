@@ -23,8 +23,7 @@ class ExtractData():
 
         real_states_sentence = []
         lengths = []
-
-
+        
         state_mapping = dict()
         state_count = 0
 

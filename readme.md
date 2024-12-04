@@ -41,7 +41,7 @@ cd k_means
 python k_means.py
 ```
 These 2 will run the baseline models for the project.
-
+Note, in order to get the V-measure scores you may need to change the logging level to INFO in the main functions.
 More details can be found below.
 
 # Run HMM

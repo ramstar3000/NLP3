@@ -109,6 +109,10 @@ class BERTEncoder():
 
     @staticmethod
     def load_bert_batch(basic = True):
+        """
+        This function is used to load the embeddings, attention masks and word mappings from the disk
+        """
+
         if not basic:
             output_embeddings = torch.load("output_embeddings2.pt")
             output_attention_masks = torch.load("output_attention_masks2.pt")
@@ -123,6 +127,11 @@ class BERTEncoder():
 
 
 class Dataset(torch.utils.data.Dataset):
+    """
+    This class is used to create a dataset for the DataLoader
+    """
+
+
     def __init__(self, sentences, tokeniser, max_length = 100):
         self.sentences = sentences
         self.tokeniser = tokeniser
@@ -143,7 +152,7 @@ class Dataset(torch.utils.data.Dataset):
         }
 
 
-def create_embeddings():   
+def create_embeddings():
     file_path = "ptb-train.conllu"
     sentences = ExtractData().parse_conllu_embeddings(file_path)
     b = BERTEncoder()

@@ -68,6 +68,8 @@ class KMeans():
 
         embeddings, attention_mask, word_mappings = BERTEncoder.load_bert_batch(basic=True)
 
+        embeddings_padded_length = 100 # Is 150 for some embeddings, here 100 for speed
+
         batch_size = 200000
         mbk = MiniBatchKMeans(n_clusters=num_states, batch_size=batch_size, max_iter=max_iter, tol=1e-20, verbose=0)
         # Note batch size is in words, need to redo our calculuations lmao
@@ -79,11 +81,12 @@ class KMeans():
                 reshaped_embeddings = combined_embeddings.view(-1, 768)
                 reshape_attention = attention.view(-1)
 
-                # mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()][: 1000].numpy())
+                # mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()][: 1000].numpy()) Used to smaller batches
                 # mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()][1000: ].numpy())    
 
                 mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()].numpy())
-        else:
+
+        else: # This is the case where we have more than 200000 words in a batch
             for l in range(0, len(embeddings) - 1, 4):
                 combined_embeddings = torch.cat((embeddings[l: l+4]), dim=0)
                 attention = torch.cat((attention_mask[l: l+4]), dim=0)
@@ -101,7 +104,7 @@ class KMeans():
 
             # Now we need to reshape the predictions back to the original shape of [num_sentences, num_words]
             predictions = mbk.predict(reshaped_embeddings.numpy()) # This is of shape [num_sentences * 100]
-            predictions = predictions.reshape(-1, 100) # TODO Adapt
+            predictions = predictions.reshape(-1, embeddings_padded_length)
             overall_predictions.append(predictions)
 
         # Now we use the word_mappings to get the real states of the words, this is of shape [batch, num_sentences, num_words], we need to flatten this to [num_sentences, num_words]
@@ -120,12 +123,10 @@ class KMeans():
                 real_labels.append(real_states_sentence[i])
                 pass
             else:
-                # TODO Analyse this case and why is arises
-                continue
+                raise ValueError(f"Lengths do not match {len(temp)} and {lengths[i]} | Probably need to increase the embeddings pad size")
 
         homo_score, comp_score, v_score = calculate_v_measure(np.concatenate(predicted_labels, axis=0) , np.concatenate(real_labels, axis = 0))
         logger.info(f"Scores of this pass \n Homo {homo_score}, Comps: {comp_score}, V : {v_score}")
-        print(f"Scores of this pass \n Homo {homo_score}, Comps: {comp_score}, V : {v_score}") # TODO Remove
 
         return homo_score, comp_score, v_score
 
