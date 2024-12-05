@@ -113,8 +113,9 @@ class KMeans():
                 predicted_labels.append(temp)
                 real_labels.append(real_states_sentence[i])
                 pass
-            # else:
-            #     raise ValueError(f"Lengths do not match {len(temp)} and {lengths[i]} | Probably need to increase the embeddings pad size")
+            else:
+                raise ValueError(f"Lengths do not match {len(temp)} and {lengths[i]} | Probably need to increase the embeddings pad size")
+                # This is a problem, we need to increase the embeddings pad size in the generation of the embeddings
 
         homo_score, comp_score, v_score = calculate_v_measure(np.concatenate(predicted_labels, axis=0) , np.concatenate(real_labels, axis = 0))
         logger.info(f"Scores of this pass \n Homo {homo_score}, Comps: {comp_score}, V : {v_score}")

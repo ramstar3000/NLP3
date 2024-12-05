@@ -58,7 +58,7 @@ class BERTEncoder():
         output_attention_masks = []
         word_mappings =  []
 
-        dataset = Dataset(sentences_raw, self.tokenizer)
+        dataset = Dataset(sentences_raw, self.tokenizer, max_length=150)
         DataLoader = torch.utils.data.DataLoader(dataset, batch_size=800)
 
         for sentences in DataLoader:
