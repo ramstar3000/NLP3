@@ -44,19 +44,6 @@ def parse_conllu(file_path, debug=False):
             real_sentence = []
 
             for token in sentence:
-                # temp_word_data = {
-                #     "id": token["id"],
-                #     "form": token["form"],
-                #     "lemma": token["lemma"],
-                #     "upos": token["upos"],
-                #     "xpos": token["xpos"],
-                #     "feats": token["feats"],
-                #     "head": token["head"],
-                #     "deprel": token["deprel"],
-                #     "deps": token["deps"],
-                #     "misc": token["misc"]
-                # } TODO Experiment with adding these
-
                 word_data.append({
                     "form": token["form"],
                     "upos": token["upos"],

@@ -31,7 +31,7 @@ def compute_cost(zt, zt_real):
 
     for ii in range(K_use):  ## real
         for jj in range(K_use):
-            cost_mat[ii, jj] = ((np.abs((zt_real == ii) * 1 - (zt == jj) * 1)).sum()) # TODO check
+            cost_mat[ii, jj] = ((np.abs((zt_real == ii) * 1 - (zt == jj) * 1)).sum())
 
     m = Munkres()
     indexes = m.compute(cost_mat.tolist())
