@@ -7,11 +7,6 @@ from BERT_encoder import BERTEncoder
 from data_processor import ExtractData
 import logging
 
-# TODO Analyse the wrong embeddings, and where the mistmatches are coming from
-# TODO Generate some training graphs, squash the dimensions
-# TODO Try and use munkres
-# TODO Try and use the same embeddings for the same sentences
-
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -80,10 +75,6 @@ class KMeans():
 
                 reshaped_embeddings = combined_embeddings.view(-1, 768)
                 reshape_attention = attention.view(-1)
-
-                # mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()][: 1000].numpy()) Used to smaller batches
-                # mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()][1000: ].numpy())    
-
                 mbk.partial_fit(reshaped_embeddings[reshape_attention.bool()].numpy())
 
         else: # This is the case where we have more than 2000 sentences in a batch
