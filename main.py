@@ -58,11 +58,9 @@ def parse_conllu(file_path, debug=False):
                     state_mapping[token["upos"]] = state_count
                     state_count += 1
 
-                # states.add(token["xpos"])
-
-                # Check for X or unkown token
-                if token["upos"] == "X":
-                    print(token["form"], token["xpos"])
+                # # Check for X or unkown token
+                # if token["upos"] == "X":
+                #     print(token["form"], token["xpos"])
                 
                 current_sentence.append(vocab[token["form"]])
                 state_sentence.append(token["upos"])
